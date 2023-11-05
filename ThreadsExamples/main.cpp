@@ -1,3 +1,11 @@
+/*
+ * In this example, we use the pthread library to create and manage threads.
+ * We create three threads and assign a unique ID to each thread.
+ * The thread_function is the function that will be executed by each thread, 
+ * and it simply prints the thread's ID. We wait for all threads to finish using pthread_join.
+ */
+
+
 #include <iostream>
 #include "stdint.h"
 #include "pthread.h" // For POSIX & Threads
