@@ -1,28 +1,37 @@
 #include <iostream>
-#include <pthread.h>
-#include <chrono>
+#include "stdint.h"
+#include "pthread.h" // For POSIX & Threads
+#include "unistd.h" //For pause and sleep
 
 using namespace std;
 
-void* thread_function(void* arg) {
-    int thread_id = *((int*)arg);
-    printf("Thread %d is running... \n", thread_id);
+#define THREADS 4
+
+void* thread_callback(void* arg)
+{
+    int threadID = (*(int*)arg);
+    printf("Thread %d running program...\n", threadID);
     return NULL;
 }
 
-int main() {
-    const int num_threads = 3;
-    pthread_t threads[num_threads];
+int main()
+{
+    pthread_t thread[THREADS];
+    uint8_t threads_u8 = THREADS;
 
-    // Create and start threads
-    for (int i = 0; i < num_threads; ++i) {
-        int thread_id = i;
-        pthread_create(&threads[i], NULL, thread_function, &thread_id);
+    for(uint8_t i = 0; i<THREADS; i++)
+    {
+        int threadID = i;
+        /* Creates a thread that calles the funct "printHello" */
+        if(pthread_create(&thread[i], NULL, thread_callback, &threadID) != 0)
+        {
+            printf("Failed to create thread");
+        }
     }
 
     // Wait for threads to finish
-    for (int i = 0; i < num_threads; ++i) {
-        pthread_join(threads[i], NULL);
+    for (int i = 0; i < THREADS; ++i) {
+        pthread_join(thread[i], NULL);
     }
 
     return 0;
