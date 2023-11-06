@@ -1,8 +1,5 @@
 /*
- * In this example, we use the pthread library to create and manage threads.
- * We create three threads and assign a unique ID to each thread.
- * The thread_function is the function that will be executed by each thread,
- * and it simply prints the thread's ID. We wait for all threads to finish using pthread_join.
+ * Calculate the value of pi using the montecarlo method while using threads in the implementation
  */
 
 
@@ -10,55 +7,116 @@
 #include "stdint.h"
 #include "pthread.h" // For POSIX & Threads
 #include "unistd.h" //For pause and sleep
+#include "math.h"
+
+#include <time.h>
 
 using namespace std;
 
+/* Total number of random points to generate */
+#define POINTS 20000000
+/* Total number of threads to be usings */
 #define THREADS 4
 
-uint8_t g_varProcess;
+/* Shared mutex for the software */
+pthread_mutex_t lock;
+/* Use global variable to obtain resutl, it is easier than using setters & getters */
+float g_sumPi = 0;
 
-void set_processFromThread(uint8_t varProcess)
-{
-    g_varProcess = varProcess;
-}
-
-uint8_t get_processFromThread()
-{
-    return g_varProcess;
-}
-
-void* thread_callback(void* arg)
-{
-    int threadID = (*(int*)arg);
-    printf("Process... %d. Thread %d running program...\n", get_processFromThread(), threadID);
-    return NULL;
-}
+/* Callback prototype */
+void* thread_callback(void* arg);
 
 int main()
 {
+    /* Variable used to obtain total and locally the value of pi */
+    float sumPi = 0;
+    /* Creation of THREADS */
     pthread_t thread[THREADS];
-    uint8_t threads_u8 = THREADS;
+    int threadID[THREADS];
+
+    /* Init function to obtain time of the whole process */
+    struct timespec start, finish;
+    long long elapsed_ts = 0;
+    long long elapsed_tms = 0;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
+    /*
+     * Create a mutex, if the attribute is set as NULL, the funct
+     * will ser as non-recursive.
+     * if it is not created successfully it will return -1
+     * else returns 0
+     */
+    if( pthread_mutex_init(&lock,NULL) != 0)
+    {
+        /* Special function to print if an error occurs */
+        perror("mutex not created\n");
+    }
 
     for(uint8_t i = 0; i<THREADS; i++)
     {
-        int threadID = i;
-        set_processFromThread(threadID);
+        threadID[i] = i;
         /*
          * &thread[i] -> Link the corresponding thread that was created.
          * thread_callback -> Function to be called that receives an argument "void* arg" for each thread.
          * threadID -> Current process being called
          */
-        if(pthread_create(&thread[i], NULL, thread_callback, &threadID) != 0)
+        if(pthread_create(&thread[i], NULL, thread_callback, &threadID[i]) != 0)
         {
             printf("Failed to create thread");
         }
     }
 
-    // Wait for threads to finish
-    for (int i = 0; i < THREADS; ++i) {
-        printf("Waiting on Thread... %d \n", get_processFromThread());
-        pthread_join(thread[i], NULL);
+    for(int i = 0; i < THREADS; i++)
+    {
+        pthread_join(thread[i],NULL);
     }
 
+    /* Obtain total time that has elapsed */
+    clock_gettime(CLOCK_MONOTONIC, &finish);
+    elapsed_ts = (finish.tv_sec - start.tv_sec) + (finish.tv_nsec - start.tv_nsec) / 1e9;
+    elapsed_tms = (finish.tv_sec - start.tv_sec) * 1000.0 + (finish.tv_nsec - start.tv_nsec) / 1e6;
+    /* Obtain final value into a local variable */
+    sumPi = g_sumPi;
+
+    puts("*************************");
+    printf("Pi value: %2.20f \n",sumPi);
+
+    puts("*************************");
+    printf("Time passed: %lld sec \n",elapsed_ts);
+    puts("*************************");
+    printf("Time passed: %lld msec \n",elapsed_tms);
+
+    /* Most important step, destroy objects */
+    pthread_mutex_destroy(&lock);
+    pthread_exit(0);
+
     return 0;
+}
+
+/*
+ * Calculate the value of pi in this callback
+ */
+void* thread_callback(void* arg)
+{
+    int threadID = (*(int*)arg);
+    printf("Thread %d running program...\n", threadID);
+
+    int32_t temp = (*(uint32_t*)arg);
+    int32_t r_init = temp*(POINTS/THREADS);
+    int32_t r_end = (temp+1)*(POINTS/THREADS);
+    float temp_sum = 0;
+
+    /* Allow multiple threads to share the operations */
+    for(int i = r_init; i < r_end; i++)
+    {
+        temp_sum = temp_sum + pow(-1,i)*(4.0/((2.0*i+1)));
+    }
+
+    /* Lock all threads and process for the addition */
+    pthread_mutex_lock(&lock);
+    g_sumPi = g_sumPi + temp_sum;
+    /* Release the mutex */
+    pthread_mutex_unlock(&lock);
+    /* Return 0 or nothing */
+    return NULL;
 }
