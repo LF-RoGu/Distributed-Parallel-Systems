@@ -83,7 +83,6 @@ int main()
 
     puts("*************************");
     printf("Time passed: %lld sec \n",elapsed_ts);
-    puts("*************************");
     printf("Time passed: %lld msec \n",elapsed_tms);
 
     /* Most important step, destroy objects */
