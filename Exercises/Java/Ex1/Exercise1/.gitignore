@@ -12,3 +12,4 @@ CMakeLists.txt
 
 # Output files
 .out/*
+.production/*
