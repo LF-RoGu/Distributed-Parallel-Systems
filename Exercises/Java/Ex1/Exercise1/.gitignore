@@ -1,0 +1,14 @@
+
+# CMake
+cmake-build-*/
+# idea
+.idea/*
+
+# CMake file
+CMakeLists.txt
+
+#.iml file
+*.iml
+
+# Output files
+.out/*
