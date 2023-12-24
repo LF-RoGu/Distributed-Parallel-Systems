@@ -1,0 +1,31 @@
+//
+#include "omp.h"
+int count;
+
+void counter(id)
+{
+ if(count <= 100)
+ {
+  count++;
+  printf("count: %d, pid: %d \n", count, id);
+ }
+}
+
+int main()
+{
+ #pragma omp parallel for num_threads(2)
+ {
+   #pragma omp critical
+   counter(omp_get_thread_num());
+ }
+
+ count = 0;
+ puts("count reset\n");
+
+ #pragma omp parallel for num_threads(2)
+ for(i = 0; i<100; i++)
+ {
+  #pragma omp critical
+  counter(omp_get_thread_num());
+ }
+}
